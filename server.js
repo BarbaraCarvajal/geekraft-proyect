@@ -8,6 +8,7 @@ import productsRoutes from "./routes/productRoutes.js";
 import blogpostrouter from "./routes/blogPostRoute.js";
 import authRoutes from "./routes/authRoute.js";
 import path from "path";
+import { fileURLToPath } from 'url';
 
 //config dotenv
 dotenv.config();
