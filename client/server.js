@@ -8,17 +8,12 @@ import productsRoutes from "./routes/productRoutes.js";
 import blogpostrouter from "./routes/blogPostRoute.js";
 import authRoutes from "./routes/authRoute.js";
 import path from "path";
-import { fileURLToPath } from 'url';
 
 //config dotenv
 dotenv.config();
 
 //database config
 connectDB();
-
-//esmodule fix
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 //rest object
 const app = express();
@@ -34,7 +29,6 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/product", productsRoutes);
 app.use("/api/v1/blog", blogpostrouter);
-app.use(express.static(path.join(__dirname, "./client/build")));
 
 
 //rest api
