@@ -1,17 +1,19 @@
+import { comparePassword, hashAnswer, hashPassword, compareAnswer } from "./../helpers/authHelper.js";
 import userModel from "../models/userModel.js";
 import orderModel from "../models/orderModel.js";
-import { comparePassword, hashPassword } from "./../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
 
+
+//REGISTRO NUEVO USUARIO
 export const registerController = async (req, res) => {
   try {
-    const { name, email, password, phone, address, answer } = req.body;
+    const { name, email, password, phone, address, answer, ask } = req.body;
     //validations
     if (!name) {
-      return res.send({ message: "El nombre es requerido" });
+      return res.send({ error: "El nombre es requerido" });
     }
     if (!email) {
-      return res.send({ message: "El correo es requerido" });
+      return res.send({ message: "El email es requerido" });
     }
     if (!password) {
       return res.send({ message: "La contraseña es requerida" });
@@ -22,20 +24,25 @@ export const registerController = async (req, res) => {
     if (!address) {
       return res.send({ message: "La dirección es requerida" });
     }
+    if (!ask) {
+      return res.send({ message: "La pregunta de seguridad es requerida" });
+    }
     if (!answer) {
-      return res.send({ message: "La respuesta es requerida" });
+      return res.send({ message: "La respuesta de seguridad es requerida" });
     }
     //check user
     const exisitingUser = await userModel.findOne({ email });
-    //si el usuario existe...
+    //exisiting user
     if (exisitingUser) {
       return res.status(200).send({
         success: false,
-        message: "Already Register please login",
+        message: "Usuario ya registrado, por favor inicie sesión",
       });
     }
-    //registrar usuario
+    //encriptar contraseña
     const hashedPassword = await hashPassword(password);
+    //encriptar respuesta
+    const hashedAnswer = await hashAnswer(answer);
     //save
     const user = await new userModel({
       name,
@@ -43,33 +50,34 @@ export const registerController = async (req, res) => {
       phone,
       address,
       password: hashedPassword,
-      answer,
+      ask,
+      answer: hashedAnswer,
     }).save();
 
     res.status(201).send({
       success: true,
-      message: "Usuario registrado satisfactoriamente",
+      message: "Usuario registrado correctamente",
       user,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error al registrar nuevo usuario",
+      message: "Error en registro de usuario",
       error,
     });
   }
 };
 
-//POST LOGIN
+//INICIO DE SESIÓN
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    //validación
+    //validation
     if (!email || !password) {
       return res.status(404).send({
         success: false,
-        message: "Correo o contraseña incorrectos",
+        message: "Correo o contraseña invalidos",
       });
     }
     //check user
@@ -77,7 +85,7 @@ export const loginController = async (req, res) => {
     if (!user) {
       return res.status(404).send({
         success: false,
-        message: "Correo no registrado",
+        message: "Email no registrado",
       });
     }
     const match = await comparePassword(password, user.password);
@@ -89,11 +97,11 @@ export const loginController = async (req, res) => {
     }
     //token
     const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "1d",
     });
     res.status(200).send({
       success: true,
-      message: "Login exitoso",
+      message: "Inicio de sesión exitoso",
       user: {
         _id: user._id,
         name: user.name,
@@ -108,7 +116,7 @@ export const loginController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error en login",
+      message: "Error en inicio de sesión",
       error,
     });
   }
@@ -117,40 +125,54 @@ export const loginController = async (req, res) => {
 //POST FORGOT PASSWORD
 export const forgotPasswordController = async (req, res) => {
   try {
-    const { email, answer, newPassword } = req.body;
+    const { email, newPassword, answer } = req.body;
     if (!email) {
-      res.status(400).send({ message: "Correo requerido" });
-    }
-    if (!answer) {
-      res.status(400).send({ message: "Respuesta es requerida" });
+      return res.status(400).send({ message: "Correo requerido" });
     }
     if (!newPassword) {
-      res.status(400).send({ message: "Nueva contraseña es requerida" });
+      return res.status(400).send({ message: "Nueva contraseña es requerida" });
     }
-    //check user
-    const user = await userModel.findOne({ email, answer });
-    //Validación
+    if (!answer) {
+      return res.status(400).send({ message: "Respuesta de seguridad es requerida" });
+    }
+    // Verificar usuario
+    const user = await userModel.findOne({ email });
     if (!user) {
       return res.status(400).send({
         success: false,
-        message: "Correo o respuesta incorrecta",
+        message: "Usuario no encontrado",
       });
     }
-    const hashed = await hashPassword(newPassword);
-    await userModel.findByIdAndUpdate(user._id, { password: hashed });
+
+    // Verificar respuesta de seguridad
+    const isAnswerMatch = await compareAnswer(answer, user.answer);
+    if (!isAnswerMatch) {
+      return res.status(401).send({
+        success: false,
+        message: "Respuesta de seguridad incorrecta",
+      });
+    }
+
+    // Si la respuesta de seguridad es correcta, actualizar la contraseña
+    const hashedNewPassword = await hashPassword(newPassword);
+    await userModel.findByIdAndUpdate(user._id, { password: hashedNewPassword });
+
     res.status(200).send({
       success: true,
-      message: "Contraseña actualizada",
+      message: "Contraseña actualizada con éxito",
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error en login",
+      message: "Error en el proceso de cambio de contraseña",
       error,
     });
   }
 };
+
+
 
 //UPDATE PROFILE
 export const updateProfileController = async (req, res) => {
@@ -201,7 +223,7 @@ export const getOrdersController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error al obtener las ordenes de compra",
+      message: "Error mientras se obtienen las ordenes de compra",
       error,
     });
   }
@@ -214,13 +236,13 @@ export const getAllOrdersController = async (req, res) => {
       .find({})
       .populate("products", "-photo")
       .populate("buyer", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: "-1" });
     res.json(orders);
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error al obtener las ordenes de compra",
+      message: "Error mientras se obtienen las ordenes de compra",
       error,
     });
   }

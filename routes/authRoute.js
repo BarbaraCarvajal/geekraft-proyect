@@ -49,10 +49,10 @@ router.get("/assistant-auth", requireSignIn, isAssistant, (req, res) => {
 //Actualizar perfil
 router.put("/profile", requireSignIn, updateProfileController);
 
-//ordenes de compra
+//orders
 router.get("/orders", requireSignIn, getOrdersController);
 
-//todas las ordenes de compra
+//all orders
 router.get("/all-orders", requireSignIn, isAdmin, getAllOrdersController);
 
 //actualizar orden de compra

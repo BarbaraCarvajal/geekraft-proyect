@@ -1,9 +1,9 @@
 import productModel from "../models/productModel.js";
+import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
 import slugify from "slugify";
 import braintree from "braintree";
 import orderModel from "../models/orderModel.js";
-//import orderModel from "../models/categoryModel.js"
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -90,7 +90,6 @@ export const getProductController = async (req, res) => {
   }
 };
 
-
 //obtener producto unitario
 export const getSingleProductController = async (req, res) => {
   try {
@@ -118,9 +117,24 @@ export const getSingleProductController = async (req, res) => {
 export const productPhotoController = async (req, res) => {
   try {
     const product = await productModel.findById(req.params.pid).select("photo");
-    if (product.photo.data) {
-      res.set("Content-type", product.photo.contentType);
+
+    // Verificar si el producto existe
+    if (!product) {
+      return res.status(404).send({
+        success: false,
+        message: "Producto no encontrado",
+      });
+    }
+
+    // Verificar si el producto tiene una foto
+    if (product.photo && product.photo.data) {
+      res.set("Content-Type", product.photo.contentType);
       return res.status(200).send(product.photo.data);
+    } else {
+      return res.status(404).send({
+        success: false,
+        message: "Foto del producto no disponible",
+      });
     }
   } catch (error) {
     console.log(error);
@@ -131,6 +145,7 @@ export const productPhotoController = async (req, res) => {
     });
   }
 };
+
 
 //eliminar producto
 export const deleteProductController = async (req, res) => {
@@ -242,7 +257,7 @@ export const productCountController = async (req, res) => {
 //productos por página
 export const productListController = async (req, res) => {
   try {
-    const perPage = 6;
+    const perPage = 8;
     const page = req.params.page ? req.params.page : 1;
     const products = await productModel
       .find({})
@@ -355,43 +370,98 @@ export const braintreeTokenController = async (req, res) => {
 };
 
 //Pago
-export const baintreePaymentController = async (req, res) => {
+
+export const braintreePaymentController = async (req, res) => {
   try {
     const { cart, nonce } = req.body;
-    let total = 0;
-    cart.map((i) => {
-      total += i.price;
-    });
+    let total = cart.reduce((acc, item) => acc + item.price * item.cartQuantity, 0);
+
+    // Validar stock antes de procesar el pago
+    for (const item of cart) {
+      const product = await productModel.findById(item._id);
+      if (!product || product.quantity < item.cartQuantity) {
+        return res.status(400).json({
+          success: false,
+          message: `No hay suficiente stock para el producto: ${product.name}`
+        });
+      }
+    }
+
     let newTransaction = gateway.transaction.sale(
       {
-        amount: total,
+        amount: total.toString(),
         paymentMethodNonce: nonce,
         options: {
           submitForSettlement: true,
         },
       },
-      function (error, result) {
-        if (result) {
-          const order = new orderModel({
-            products: cart,
-            payment: result,
-            buyer: req.user._id,
-          }).save();
-          res.json({ ok: true });
-        } else {
-          res.status(500).send({
+      async function (error, result) {
+        if (error) {
+          return res.status(500).send({
             success: false,
             message: "Error al realizar el pago",
             error,
+          });
+        }
+
+        if (result.success) {
+          const order = new orderModel({
+            products: cart.map(item => ({
+              product: item._id,
+              quantity: item.cartQuantity
+            })),
+            payment: result.transaction,
+            buyer: req.user._id,
+            status: 'No procesado'
+          });
+
+          await order.save();
+
+          // Actualizar el stock de cada producto
+          for (const item of cart) {
+            await productModel.findByIdAndUpdate(item._id, {
+              $inc: { quantity: -item.cartQuantity }
+            });
+          }
+
+          return res.status(201).json({ ok: true, order });
+        } else {
+          return res.status(500).send({
+            success: false,
+            message: "Error al procesar la transacción de pago",
+            error: result.message,
           });
         }
       }
     );
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    return res.status(500).send({
       success: false,
       message: "Error al realizar el pago",
+      error,
+    });
+  }
+};
+
+//productos por categoria
+export const productCountByCategoryController = async (req, res) => {
+  try {
+    const categories = await categoryModel.find({});
+    const categoryCounts = await Promise.all(categories.map(async (category) => {
+      const count = await productModel.countDocuments({ category: category._id });
+      return { category: category.name, count };
+    }));
+    
+    res.status(200).send({
+      success: true,
+      categoryCounts,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error al obtener el total de productos por categoría",
       error,
     });
   }

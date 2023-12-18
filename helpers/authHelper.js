@@ -12,4 +12,15 @@ export const hashPassword = async (password) => {
 
 export const comparePassword = async (password, hashedPassword) => {
   return bcrypt.compare(password, hashedPassword);
-}
+};
+
+export const hashAnswer = async (answer) => {
+  const salt = await bcrypt.genSalt(10);
+  const hashedAnswer = await bcrypt.hash(answer, salt);
+  return hashedAnswer;
+};
+
+export const compareAnswer = async (answer, hashedAnswer) => {
+  return bcrypt.compare(answer, hashedAnswer);
+};
+

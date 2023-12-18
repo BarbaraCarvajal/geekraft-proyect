@@ -1,21 +1,22 @@
 {
   "files": {
-    "main.css": "/static/css/main.b6564c3e.css",
-    "main.js": "/static/js/main.e540394b.js",
+    "main.css": "/static/css/main.340738d6.css",
+    "main.js": "/static/js/main.346f3993.js",
     "static/js/787.c4e7f8f9.chunk.js": "/static/js/787.c4e7f8f9.chunk.js",
     "static/media/contacto.png": "/static/media/contacto.4f602c3d0ddd80e2ba44.png",
+    "static/media/transferenciaaa.png": "/static/media/transferenciaaa.0481d65ffe3619fad53b.png",
     "static/media/logo.png": "/static/media/logo.6472ad7b6c0e16d7f52a.png",
     "static/media/bootstrap-icons.woff?": "/static/media/bootstrap-icons.449ad8adf6ae0424b7ed.woff",
     "static/media/bootstrap-icons.woff2?": "/static/media/bootstrap-icons.dea24bf5a7646d8b84e7.woff2",
     "static/media/politicas-envio.jpg": "/static/media/politicas-envio.5f62bcd9eb1dc843de1b.jpg",
     "static/media/sobre-nosotros.webp": "/static/media/sobre-nosotros.ccbde323b3ef0af70bda.webp",
     "index.html": "/index.html",
-    "main.b6564c3e.css.map": "/static/css/main.b6564c3e.css.map",
-    "main.e540394b.js.map": "/static/js/main.e540394b.js.map",
+    "main.340738d6.css.map": "/static/css/main.340738d6.css.map",
+    "main.346f3993.js.map": "/static/js/main.346f3993.js.map",
     "787.c4e7f8f9.chunk.js.map": "/static/js/787.c4e7f8f9.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.b6564c3e.css",
-    "static/js/main.e540394b.js"
+    "static/css/main.340738d6.css",
+    "static/js/main.346f3993.js"
   ]
 }

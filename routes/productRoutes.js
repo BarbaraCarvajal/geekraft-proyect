@@ -5,13 +5,15 @@ import {
   requireSignIn,
 } from "../middlewares/authMiddleware.js";
 import {
-  baintreePaymentController,
+  
+  braintreePaymentController,
   braintreeTokenController,
   createProductController,
   deleteProductController,
   getProductController,
   getSingleProductController,
   productCategoryController,
+  productCountByCategoryController,
   productCountController,
   productFiltersController,
   productListController,
@@ -84,6 +86,10 @@ router.get("/product-category/:slug", productCategoryController);
 router.get("/braintree/token", braintreeTokenController);
 
 //pagos
-router.post("/braintree/payment", requireSignIn, baintreePaymentController);
+router.post("/braintree/payment", requireSignIn, braintreePaymentController);
+
+//productos por categoría
+router.get("/product-counts", productCountByCategoryController);
+
 
 export default router;

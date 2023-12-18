@@ -8,7 +8,7 @@ import productsRoutes from "./routes/productRoutes.js";
 import blogpostrouter from "./routes/blogPostRoute.js";
 import authRoutes from "./routes/authRoute.js";
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 //config dotenv
 dotenv.config();
@@ -16,7 +16,7 @@ dotenv.config();
 //database config
 connectDB();
 
-//esmodule fix
+//esmodule
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -27,7 +27,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
-app.use(express.static(path.join(__dirname, "./client/build")));
+app.use(express.static(path.join(__dirname, './client/build')))
 
 //routes
 app.use("/api/v1/auth", authRoutes);
@@ -35,18 +35,17 @@ app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/product", productsRoutes);
 app.use("/api/v1/blog", blogpostrouter);
 
-
 //rest api
 app.use('*', function(req,res){
   res.sendFile(path.join(__dirname, './client/build/index.html'))
 
 }) 
 
-/* app.get("/", (req, res) => {
+app.get("/", (req, res) => {
   res.send({
     message: "Bienvenidos a Geekraft API",
   });
-});  */
+}); 
 
 //PORT
 const PORT = process.env.PORT || 8080;
